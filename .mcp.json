@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_936f6a689e4d9a9a2502b78f37b2554612a59cc8",
+        "SUPABASE_PROJECT_REF": "xlabgxtdbasbohvowfod",
+        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsYWJneHRkYmFzYm9odm93Zm9kIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQ1NDc2OCwiZXhwIjoyMDcwMDMwNzY4fQ.oQV-8iaTGi5gkqF1oQI-g9Uxg_RRo6goAW2T89KOomM",
+        "SUPABASE_DB_PASSWORD": "62845_Madhouse"
+      }
+    }
+  }
+}
