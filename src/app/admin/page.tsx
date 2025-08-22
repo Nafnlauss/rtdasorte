@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { formatCurrency, formatNumber } from '@/lib/utils/format'
 
 async function getDashboardStats() {
   const supabase = await createClient()
@@ -14,7 +15,7 @@ async function getDashboardStats() {
     supabase.from('raffles').select('*', { count: 'exact', head: true }),
     supabase.from('transactions').select('amount').eq('status', 'paid'),
     supabase.from('raffle_numbers')
-      .select('*, raffles(title, ticket_price)')
+      .select('*, raffles(title, number_price)')
       .eq('status', 'paid')
       .order('created_at', { ascending: false })
       .limit(10)
@@ -33,8 +34,8 @@ async function getDashboardStats() {
     .limit(5)
 
   return {
-    totalUsers,
-    totalRaffles,
+    totalUsers: totalUsers || 0,
+    totalRaffles: totalRaffles || 0,
     totalRevenue,
     totalTicketsSold,
     recentSales: recentSales || [],
@@ -47,13 +48,13 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground">Visão geral do sistema de rifas</p>
+      <div className="mb-4 sm:mb-6 md:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Dashboard Administrativo</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Visão geral do sistema de rifas</p>
       </div>
 
       {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
         <div className="raffle-card">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -62,8 +63,8 @@ export default async function AdminDashboard() {
             <span className="text-xs text-green-500 font-semibold">+12.5%</span>
           </div>
           <p className="text-sm text-muted-foreground mb-1">Receita Total</p>
-          <p className="text-2xl font-bold">
-            R$ {stats.totalRevenue.toFixed(2).replace('.', ',')}
+          <p className="text-xl sm:text-2xl font-bold">
+            {formatCurrency(stats.totalRevenue)}
           </p>
         </div>
 
@@ -75,7 +76,7 @@ export default async function AdminDashboard() {
             <span className="text-xs text-green-500 font-semibold">+8.2%</span>
           </div>
           <p className="text-sm text-muted-foreground mb-1">Números Vendidos</p>
-          <p className="text-2xl font-bold">{stats.totalTicketsSold}</p>
+          <p className="text-xl sm:text-2xl font-bold">{formatNumber(stats.totalTicketsSold)}</p>
         </div>
 
         <div className="raffle-card">
@@ -86,7 +87,7 @@ export default async function AdminDashboard() {
             <span className="text-xs text-green-500 font-semibold">+15.3%</span>
           </div>
           <p className="text-sm text-muted-foreground mb-1">Total de Usuários</p>
-          <p className="text-2xl font-bold">{stats.totalUsers || 0}</p>
+          <p className="text-xl sm:text-2xl font-bold">{formatNumber(stats.totalUsers || 0)}</p>
         </div>
 
         <div className="raffle-card">
@@ -97,14 +98,14 @@ export default async function AdminDashboard() {
             <span className="text-xs text-blue-500 font-semibold">Ativas</span>
           </div>
           <p className="text-sm text-muted-foreground mb-1">Total de Rifas</p>
-          <p className="text-2xl font-bold">{stats.totalRaffles || 0}</p>
+          <p className="text-xl sm:text-2xl font-bold">{formatNumber(stats.totalRaffles || 0)}</p>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Rifas Ativas */}
         <div className="raffle-card">
-          <h2 className="text-xl font-bold mb-4">Rifas Ativas</h2>
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Rifas Ativas</h2>
           
           {stats.activeRaffles.length === 0 ? (
             <p className="text-muted-foreground">Nenhuma rifa ativa no momento</p>
@@ -115,15 +116,15 @@ export default async function AdminDashboard() {
                   <div>
                     <p className="font-semibold">{raffle.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {raffle.available_numbers}/{raffle.total_numbers} disponíveis
+                      {(raffle.available_numbers || 0).toLocaleString('pt-BR')}/{(raffle.total_numbers || 0).toLocaleString('pt-BR')} disponíveis
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-primary">
-                      R$ {raffle.ticket_price.toFixed(2).replace('.', ',')}
+                      R$ {(raffle.number_price || 0).toFixed(2).replace('.', ',')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {Math.round(((raffle.total_numbers - raffle.available_numbers) / raffle.total_numbers) * 100)}% vendido
+                      {raffle.total_numbers ? Math.round(((raffle.total_numbers - (raffle.available_numbers || 0)) / raffle.total_numbers) * 100) : 0}% vendido
                     </p>
                   </div>
                 </div>
@@ -134,7 +135,7 @@ export default async function AdminDashboard() {
 
         {/* Vendas Recentes */}
         <div className="raffle-card">
-          <h2 className="text-xl font-bold mb-4">Vendas Recentes</h2>
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Vendas Recentes</h2>
           
           {stats.recentSales.length === 0 ? (
             <p className="text-muted-foreground">Nenhuma venda recente</p>
@@ -143,17 +144,17 @@ export default async function AdminDashboard() {
               {stats.recentSales.slice(0, 5).map((sale) => (
                 <div key={sale.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                   <div>
-                    <p className="font-semibold text-sm">{sale.raffles?.title}</p>
+                    <p className="font-semibold text-sm">{sale.raffles?.title || 'Rifa sem título'}</p>
                     <p className="text-xs text-muted-foreground">
-                      Número: {String(sale.number).padStart(4, '0')}
+                      Número: {String(sale.number || 0).padStart(4, '0')}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-primary">
-                      R$ {sale.raffles?.ticket_price?.toFixed(2).replace('.', ',') || '0,00'}
+                      R$ {(sale.raffles?.number_price || 0).toFixed(2).replace('.', ',')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(sale.created_at).toLocaleString('pt-BR')}
+                      {sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : '-'}
                     </p>
                   </div>
                 </div>

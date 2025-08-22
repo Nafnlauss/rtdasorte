@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import RandomNumberSelector from '@/components/raffle/RandomNumberSelector'
+import LastNumbersAlert from '@/components/raffle/LastNumbersAlert'
 
 async function getRaffle(id: string) {
   const supabase = await createClient()
@@ -19,18 +21,33 @@ async function getRaffle(id: string) {
 
 export default async function RafflePage({ params }: { params: { id: string } }) {
   const raffle = await getRaffle(params.id)
-
-  // Criar grid de números disponíveis (simplificado)
-  const numbers = Array.from({ length: raffle.total_numbers }, (_, i) => i + 1)
+  
+  // Calcular progresso
+  const soldNumbers = raffle.total_numbers - (raffle.available_numbers || raffle.total_numbers)
+  const realProgress = raffle.total_numbers > 0 ? (soldNumbers / raffle.total_numbers) * 100 : 0
+  
+  // Usar progresso manual se configurado
+  const progress = raffle.progress_mode === 'manual' 
+    ? (raffle.manual_progress || 0)
+    : realProgress
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-4 sm:py-6 md:py-8 lg:py-12">
       <div className="container-wrapper">
-        <div className="grid lg:grid-cols-2 gap-8">
+        {/* Alerta de últimos números - Banner Principal */}
+        {progress >= 80 && (
+          <LastNumbersAlert 
+            progressPercentage={progress}
+            availableNumbers={raffle.available_numbers || 0}
+            variant="banner"
+          />
+        )}
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Informações da Rifa */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {raffle.image_url && (
-              <div className="h-96 rounded-lg overflow-hidden bg-secondary">
+              <div className="h-48 sm:h-64 md:h-80 lg:h-96 rounded-lg overflow-hidden bg-secondary">
                 <img
                   src={raffle.image_url}
                   alt={raffle.title}
@@ -39,42 +56,67 @@ export default async function RafflePage({ params }: { params: { id: string } })
               </div>
             )}
             
-            <div className="raffle-card">
-              <h1 className="text-2xl md:text-3xl font-bold mb-4">{raffle.title}</h1>
-              <p className="text-muted-foreground mb-6">{raffle.description}</p>
+            <div className="raffle-card p-4 sm:p-5 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2 sm:mb-3 md:mb-4">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{raffle.title}</h1>
+                {progress >= 80 && (
+                  <LastNumbersAlert 
+                    progressPercentage={progress}
+                    availableNumbers={raffle.available_numbers || 0}
+                    variant="inline"
+                  />
+                )}
+              </div>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">{raffle.description}</p>
               
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-3 border-b border-border">
-                  <span className="text-muted-foreground">Valor por número:</span>
-                  <span className="text-xl font-bold text-primary">
-                    R$ {raffle.ticket_price.toFixed(2).replace('.', ',')}
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-between py-2 sm:py-3 border-b border-border">
+                  <span className="text-xs sm:text-sm md:text-base text-muted-foreground">Valor por número:</span>
+                  <span className="text-base sm:text-lg md:text-xl font-bold text-primary">
+                    R$ {(raffle.number_price || 0).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between py-3 border-b border-border">
-                  <span className="text-muted-foreground">Prêmio:</span>
-                  <span className="font-semibold">{raffle.prize_description}</span>
+                <div className="flex items-center justify-between py-2 sm:py-3 border-b border-border">
+                  <span className="text-xs sm:text-sm md:text-base text-muted-foreground">Prêmio:</span>
+                  <span className="text-xs sm:text-sm md:text-base font-semibold text-right max-w-[60%]">
+                    {raffle.prize_description || raffle.title}
+                  </span>
                 </div>
                 
                 {raffle.draw_date && (
-                  <div className="flex items-center justify-between py-3 border-b border-border">
-                    <span className="text-muted-foreground">Data do sorteio:</span>
-                    <span className="font-semibold">
+                  <div className="flex items-center justify-between py-2 sm:py-3 border-b border-border">
+                    <span className="text-xs sm:text-sm md:text-base text-muted-foreground">Data do sorteio:</span>
+                    <span className="text-xs sm:text-sm md:text-base font-semibold">
                       {new Date(raffle.draw_date).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between py-3 border-b border-border">
-                  <span className="text-muted-foreground">Números disponíveis:</span>
-                  <span className="font-semibold">
-                    {raffle.available_numbers} de {raffle.total_numbers}
-                  </span>
+                <div className="py-2 sm:py-3 border-b border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs sm:text-sm md:text-base text-muted-foreground">Números vendidos:</span>
+                    <span className="text-xs sm:text-sm md:text-base font-semibold">
+                      {soldNumbers.toLocaleString('pt-BR')} de {raffle.total_numbers.toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-2 sm:h-3">
+                    <div 
+                      className="gradient-primary h-full rounded-full transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">
+                    <span className="text-muted-foreground">{progress.toFixed(1)}% vendido</span>
+                    <span className="text-primary font-semibold">
+                      {(raffle.available_numbers || 0).toLocaleString('pt-BR')} disponíveis
+                    </span>
+                  </div>
                 </div>
                 
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className={`font-semibold ${
+                <div className="flex items-center justify-between py-2 sm:py-3">
+                  <span className="text-xs sm:text-sm md:text-base text-muted-foreground">Status:</span>
+                  <span className={`text-xs sm:text-sm md:text-base font-semibold ${
                     raffle.status === 'active' ? 'text-green-500' : 
                     raffle.status === 'finished' ? 'text-blue-500' : 
                     'text-yellow-500'
@@ -87,18 +129,87 @@ export default async function RafflePage({ params }: { params: { id: string } })
               </div>
             </div>
 
-            {/* Como Funciona */}
-            <div className="raffle-card">
-              <h2 className="text-xl font-bold mb-4">Como Funciona</h2>
+            {/* Como Funciona - Mobile/Tablet */}
+            <div className="raffle-card p-4 sm:p-5 md:p-6 lg:hidden">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4">Como Funciona</h2>
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex gap-2 sm:gap-3">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] sm:text-xs md:text-sm font-bold">1</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm md:text-base font-semibold">Escolha a quantidade</p>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                      Selecione quantos números deseja comprar
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 sm:gap-3">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] sm:text-xs md:text-sm font-bold">2</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm md:text-base font-semibold">Números aleatórios</p>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                      O sistema seleciona números aleatórios para você
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 sm:gap-3">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] sm:text-xs md:text-sm font-bold">3</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm md:text-base font-semibold">Pague via PIX</p>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                      Pagamento instantâneo e seguro
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 sm:gap-3">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] sm:text-xs md:text-sm font-bold">4</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm md:text-base font-semibold">Aguarde o sorteio</p>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                      Boa sorte! O sorteio será na data informada
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Coluna Direita - Seletor de Números */}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Seletor de Números */}
+            <RandomNumberSelector 
+              raffleId={raffle.id}
+              raffleTitle={raffle.title}
+              numberPrice={raffle.number_price || 0}
+              totalNumbers={raffle.total_numbers}
+              availableNumbers={raffle.available_numbers || 0}
+              minPurchase={raffle.min_numbers || 1}
+              purchaseConfig={raffle.purchase_config}
+              status={raffle.status}
+            />
+
+            {/* Como Funciona - Desktop */}
+            <div className="raffle-card p-4 sm:p-5 md:p-6 hidden lg:block">
+              <h2 className="text-lg md:text-xl font-bold mb-4">Como Funciona</h2>
               <div className="space-y-3">
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-bold">1</span>
                   </div>
                   <div>
-                    <p className="font-semibold">Escolha seus números</p>
+                    <p className="font-semibold">Escolha a quantidade</p>
                     <p className="text-sm text-muted-foreground">
-                      Selecione quantos números desejar
+                      Selecione quantos números deseja comprar
                     </p>
                   </div>
                 </div>
@@ -106,6 +217,18 @@ export default async function RafflePage({ params }: { params: { id: string } })
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-bold">2</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Números aleatórios</p>
+                    <p className="text-sm text-muted-foreground">
+                      O sistema seleciona números aleatórios para você
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold">3</span>
                   </div>
                   <div>
                     <p className="font-semibold">Pague via PIX</p>
@@ -117,86 +240,15 @@ export default async function RafflePage({ params }: { params: { id: string } })
                 
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold">3</span>
+                    <span className="text-sm font-bold">4</span>
                   </div>
                   <div>
                     <p className="font-semibold">Aguarde o sorteio</p>
                     <p className="text-sm text-muted-foreground">
-                      Baseado na Loteria Federal
+                      Boa sorte! O sorteio será na data informada
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Seleção de Números */}
-          <div className="space-y-6">
-            <div className="raffle-card sticky top-24">
-              <h2 className="text-xl font-bold mb-4">Escolha seus números</h2>
-              
-              {/* Legenda */}
-              <div className="flex gap-4 mb-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-secondary rounded" />
-                  <span className="text-muted-foreground">Disponível</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary rounded" />
-                  <span className="text-muted-foreground">Selecionado</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500/20 rounded" />
-                  <span className="text-muted-foreground">Vendido</span>
-                </div>
-              </div>
-              
-              {/* Grid de Números (versão simplificada) */}
-              <div className="grid grid-cols-10 gap-1 mb-6 max-h-96 overflow-y-auto">
-                {numbers.map((number) => {
-                  const isAvailable = Math.random() > 0.3 // Simulação
-                  return (
-                    <button
-                      key={number}
-                      disabled={!isAvailable || raffle.status !== 'active'}
-                      className={`
-                        aspect-square flex items-center justify-center text-xs font-semibold rounded transition-colors
-                        ${isAvailable 
-                          ? 'bg-secondary hover:bg-primary hover:text-primary-foreground cursor-pointer' 
-                          : 'bg-red-500/20 cursor-not-allowed text-muted-foreground'
-                        }
-                        ${raffle.status !== 'active' ? 'opacity-50 cursor-not-allowed' : ''}
-                      `}
-                    >
-                      {String(number).padStart(4, '0')}
-                    </button>
-                  )
-                })}
-              </div>
-              
-              {/* Carrinho */}
-              <div className="space-y-4">
-                <div className="p-4 bg-secondary rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Números selecionados:</span>
-                    <span className="font-semibold">0</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total:</span>
-                    <span className="text-xl font-bold text-primary">R$ 0,00</span>
-                  </div>
-                </div>
-                
-                <button 
-                  disabled={raffle.status !== 'active'}
-                  className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {raffle.status === 'active' ? 'Finalizar Compra' : 'Rifa Indisponível'}
-                </button>
-                
-                <p className="text-xs text-center text-muted-foreground">
-                  Pagamento seguro via PIX
-                </p>
               </div>
             </div>
           </div>

@@ -2,170 +2,177 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Interações
 
-This is a professional online raffle system for Brazil, designed to support multiple simultaneous campaigns with full regulatory compliance and modern features.
+- Sempre fale comigo em pt-br
 
-## Technology Stack
-
-### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **UI**: React 18 + Tailwind CSS + shadcn/ui
-- **State**: Zustand / React Context
-- **Forms**: React Hook Form + Zod
-
-### Backend
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth + Custom Phone Auth
-- **API**: Next.js API Routes
-- **Queue**: BullMQ (Redis)
-
-### Integrations
-- **Payment**: PIX via Partner Gateway API
-- **SMS/WhatsApp**: Twilio / Amazon SNS
-- **Lottery**: Federal Lottery APIs (Lotodicas, etc)
-- **Analytics**: Google Analytics 4 + Facebook Pixel
-
-## Essential Commands
+## Comandos Essenciais
 
 ```bash
-# Install dependencies
-npm install
+# Desenvolvimento
+npm run dev           # Servidor de desenvolvimento (http://localhost:3000)
+npm run build        # Build para produção
+npm run start        # Executar build de produção
+npm run lint         # Linting do código
 
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run production build
-npm start
-
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
-
-# Format code
-npm run format
-
-# Run tests
-npm run test
-npm run test:e2e
-
-# Generate Supabase types
-npm run generate-types
-
-# Database migrations
-npx supabase db push
-npx supabase migration new <name>
-
-# Add shadcn/ui components
-npx shadcn-ui@latest add <component>
+# Admin
+npm run setup:admin  # Configurar usuário admin inicial (scripts/setup-admin.ts)
 ```
 
-## Project Architecture
+## Arquitetura Principal
 
-### Directory Structure
+### Stack Técnica
+- **Framework**: Next.js 15 com App Router
+- **UI**: React 19 + Tailwind CSS + shadcn/ui
+- **Database**: Supabase (PostgreSQL + Auth + Storage)
+- **Estado**: Zustand para carrinho e autenticação
+- **Formulários**: React Hook Form + Zod
+- **Pagamentos**: PaySamba (PIX brasileiro)
+- **Gráficos**: Recharts para métricas
+- **Animações**: Framer Motion
+
+### Estrutura de Rotas
+
 ```
-src/
-   app/                    # Next.js App Router
-      (auth)/            # Authentication pages
-      (dashboard)/       # User dashboard
-      (admin)/           # Admin panel
-      rifas/             # Public raffle pages
-      api/               # API routes
-   components/            # React components
-      ui/               # shadcn/ui base components
-      features/         # Feature-specific components
-      layout/           # Layout components
-   lib/                   # Core libraries
-      supabase/         # Database clients
-      api/              # External API integrations
-      utils/            # Utility functions
-      services/         # Business logic services
-   hooks/                 # Custom React hooks
-   stores/               # Zustand state stores
-   types/                # TypeScript definitions
+/                       # Landing page pública
+/raffles               # Lista de rifas ativas
+/raffles/[id]          # Detalhes e compra de números
+/payment/[id]          # Fluxo de pagamento PIX
+
+/admin                 # Painel administrativo
+  /login               # Login separado para admin
+  /raffles             # Gestão de rifas
+    /new               # Criar nova rifa
+    /[id]/edit         # Editar rifa existente
+    /[id]/draw         # Realizar sorteio
+    /[id]/metrics      # Métricas da rifa
+    /reorder           # Reordenar rifas
+  /transactions        # Controle de transações
+  /users               # Gestão de usuários
+  /winners             # Registro de ganhadores
+  /settings            # Configurações do sistema
+
+/api
+  /checkout/create-payment  # Criar pagamento PIX
+  /webhooks/paysamba       # Webhook de confirmação PIX
+  /raffles/[id]/numbers    # Status dos números
+  /lottery/check           # Verificar resultado loteria
 ```
 
-### Key Architecture Patterns
+### Fluxo de Pagamento PIX
 
-1. **Authentication Flow**: Phone-based OTP authentication with SMS/WhatsApp verification
-2. **Payment Processing**: Asynchronous PIX payment with webhook confirmation
-3. **Real-time Updates**: Supabase Realtime for ticket availability and payment status
-4. **Lottery Integration**: Automated draw processing using Federal Lottery results
-5. **Queue System**: BullMQ for async jobs (notifications, payment processing)
+1. **Seleção de Números**: Interface visual com grid de números
+2. **Carrinho**: Sistema lateral com Zustand (`useCartStore`)
+3. **Checkout**: Criação de transação via `/api/checkout/create-payment`
+4. **QR Code PIX**: Geração via PaySamba com expiração de 15 minutos
+5. **Webhook**: Callback em `/api/webhooks/paysamba` para confirmar pagamento
+6. **Confirmação**: Atualização de status e reserva de números
 
-## Database Schema
+### Integrações Externas
 
-The system uses Supabase PostgreSQL with the following core tables:
-- `profiles`: User profiles with phone verification
-- `raffles`: Raffle campaigns with lottery integration
-- `tickets`: Individual raffle numbers with status tracking
-- `transactions`: Payment records with PIX integration
-- `winners`: Draw results and prize delivery tracking
-- `notifications`: Multi-channel notification system
+- **PaySamba**: Gateway PIX (`src/lib/services/paysamba.ts`)
+  - Sandbox e produção configuráveis
+  - Webhook para confirmação de pagamento
+  
+- **Loteria Federal**: Verificação de resultados (`src/lib/services/loteria-federal.ts`)
+  - API oficial para sorteios
+  - Integração com sistema de draw
 
-## Critical Business Rules
+- **Raffle Numbers Service**: (`src/lib/services/raffle-numbers.ts`)
+  - Geração e validação de números
+  - Controle de disponibilidade
 
-1. **Age Restriction**: Users must be 18+ (validated via CPF and birth date)
-2. **Payment Window**: PIX payments expire after 30 minutes
-3. **Ticket Reservation**: Reserved tickets are released after 10 minutes
-4. **Draw Rules**: Winners determined by Federal Lottery results
-5. **Commission System**: Affiliate commissions calculated per transaction
+### Banco de Dados (Supabase)
 
-## Security Considerations
+Principais tabelas (detalhes em DATABASE_STRUCTURE.md):
+- `profiles`: Perfis de usuários (auth.users)
+- `users`: Compatibilidade com sistema legado
+- `raffles`: Campanhas de rifa com configurações de compra
+- `raffle_numbers`: Controle individual de números
+- `transactions`: Transações de pagamento
+- `tickets`: Números vendidos (tabela legada)
+- `winners`: Registro de ganhadores
+- `notifications`: Sistema de notificações
+- `login_logs`: Auditoria de acessos
 
-- LGPD compliance with data export/deletion capabilities
-- CPF validation for fraud prevention
-- Rate limiting on all public endpoints
-- Webhook signature validation for payment confirmations
-- RLS (Row Level Security) enabled on all Supabase tables
+RLS habilitado em todas as tabelas com políticas específicas.
 
-## Environment Variables
+### Sistema de Autenticação
 
-Required environment variables:
+- **Usuários**: Supabase Auth padrão
+- **Admin**: Autenticação separada com senha mestre
+  - Login em `/admin/login`
+  - Sessão gerenciada via `admin-session`
+  - Middleware em `src/lib/supabase/middleware.ts`
+  - Logs detalhados em `src/lib/logger.ts`
+
+### Monitoramento e Observabilidade
+
+- **Logger**: Sistema centralizado (`src/lib/logger.ts`)
+  - Logs estruturados com trace_id
+  - Diferentes níveis: info, warn, error, debug
+  - authLog para eventos de autenticação
+  
+- **Auth Monitor**: Hook para diagnóstico (`src/hooks/useAuthMonitor.ts`)
+- **Browser Monitor**: Monitoramento client-side (`src/lib/browser-monitor.ts`)
+- **Debug Logger**: Componente visual para desenvolvimento (`src/components/DebugLogger.tsx`)
+
+### Variáveis de Ambiente Necessárias
+
 ```
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Payment Gateway
-PAYMENT_API_URL=
-PAYMENT_API_KEY=
-WEBHOOK_SECRET=
+# Pagamentos
+PAYSAMBA_API_TOKEN=
+PAYSAMBA_API_URL=
+PAYSAMBA_WEBHOOK_URL=
 
-# SMS/WhatsApp
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=
+# Admin
+ADMIN_PASSWORD=
 
-# Security
-JWT_SECRET=
-
-# Application
-NEXT_PUBLIC_APP_URL=
+# Projeto Supabase
+# ID: xlabgxtdbasbohvowfod
+# Region: sa-east-1
 ```
 
-## Development Workflow
+## Padrões de Desenvolvimento
 
-1. Always check existing patterns in neighboring files before implementing new features
-2. Use TypeScript strict mode and validate all external data with Zod
-3. Implement real-time updates for critical user-facing features
-4. Test payment flows in sandbox environment before production
-5. Ensure mobile-first responsive design for all new components
+### Componentes
+- Usar componentes shadcn/ui existentes em `src/components/ui/`
+- Componentes admin em `src/components/admin/`
+- Componentes de rifa em `src/components/raffle/`
+- Mobile-first com Tailwind CSS
+- Validação com Zod em todos os formulários
 
-## Important Notes
+### API Routes
+- Sempre validar dados de entrada
+- Usar service role key para operações administrativas
+- Retornar status HTTP apropriados
+- Logs estruturados com trace_id
 
-- The system is designed for the Brazilian market with PIX as the primary payment method
-- All monetary values are in BRL (Brazilian Real)
-- Phone numbers must be Brazilian format (+55)
-- Lottery integration is specific to Brazilian Federal Lottery
-- All user communications default to Portuguese (pt-BR)
+### Supabase
+- Usar `createClient` para cliente público
+- Usar service role apenas quando necessário
+- Sempre verificar permissões RLS
+- Cliente instrumentado em `src/lib/supabase/instrumented-client.ts`
 
-## Personal Preferences
+### Sistema Brasileiro
+- Formatação de valores em BRL (R$)
+- Telefones no formato +55
+- CPF como identificador principal
+- PIX como método de pagamento exclusivo
 
-- Sempre falo comigo no chat em portugues
+### Testes E2E (Playwright)
+Scripts de teste disponíveis em `test-*.mjs`:
+- `test-login-only.mjs`: Teste de login admin
+- `test-admin-save.mjs`: Teste de salvamento
+- `test-create-raffle.mjs`: Criação de rifa
+- `test-reorder-raffles.mjs`: Reordenação de rifas
+
+### Migrações
+- Scripts SQL em `src/migrations/`
+- Aplicador de migrações em `src/lib/apply-migration.ts`
+- Histórico de correções em `FIX_REPORT.md`

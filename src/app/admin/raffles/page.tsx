@@ -1,19 +1,37 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { formatCurrency, formatNumber, formatPercentage } from '@/lib/utils/format'
 
-async function getRaffles() {
-  const supabase = await createClient()
-  
-  const { data: raffles } = await supabase
-    .from('raffles')
-    .select('*')
-    .order('created_at', { ascending: false })
+export default function AdminRafflesPage() {
+  const [raffles, setRaffles] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+  const supabase = createClient()
 
-  return raffles || []
-}
+  useEffect(() => {
+    loadRaffles()
+  }, [])
 
-export default async function AdminRafflesPage() {
-  const raffles = await getRaffles()
+  const loadRaffles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('raffles')
+        .select('*')
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setRaffles(data || [])
+    } catch (error) {
+      console.error('Error loading raffles:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div>
@@ -23,13 +41,22 @@ export default async function AdminRafflesPage() {
           <p className="text-muted-foreground">Administre todas as rifas do sistema</p>
         </div>
         
-        <Link
-          href="/admin/raffles/new"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
-        >
-          <span className="text-xl">➕</span>
-          Nova Rifa
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/raffles/reorder"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors font-semibold"
+          >
+            <span className="text-xl">↕️</span>
+            Reordenar
+          </Link>
+          <Link
+            href="/admin/raffles/new"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+          >
+            <span className="text-xl">➕</span>
+            Nova Rifa
+          </Link>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -48,7 +75,20 @@ export default async function AdminRafflesPage() {
         </button>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="raffle-card">
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-muted-foreground">Carregando rifas...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tabela de Rifas */}
+      {!isLoading && (
       <div className="raffle-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -73,9 +113,12 @@ export default async function AdminRafflesPage() {
                 </tr>
               ) : (
                 raffles.map((raffle) => {
-                  const soldNumbers = raffle.total_numbers - raffle.available_numbers
-                  const revenue = soldNumbers * raffle.ticket_price
-                  const progress = (soldNumbers / raffle.total_numbers) * 100
+                  const totalNumbers = raffle.total_numbers || 0
+                  const availableNumbers = raffle.available_numbers || 0
+                  const ticketPrice = raffle.number_price || 0
+                  const soldNumbers = totalNumbers - availableNumbers
+                  const revenue = soldNumbers * ticketPrice
+                  const progress = totalNumbers > 0 ? (soldNumbers / totalNumbers) * 100 : 0
 
                   return (
                     <tr key={raffle.id} className="border-t border-border">
@@ -112,15 +155,15 @@ export default async function AdminRafflesPage() {
                       </td>
                       <td className="p-4">
                         <p className="font-semibold">
-                          R$ {raffle.ticket_price.toFixed(2).replace('.', ',')}
+                          {formatCurrency(ticketPrice)}
                         </p>
                       </td>
                       <td className="p-4">
-                        <p className="font-semibold">{raffle.total_numbers}</p>
+                        <p className="font-semibold">{totalNumbers.toLocaleString('pt-BR')}</p>
                       </td>
                       <td className="p-4">
                         <div>
-                          <p className="font-semibold">{soldNumbers}</p>
+                          <p className="font-semibold">{soldNumbers.toLocaleString('pt-BR')}</p>
                           <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden mt-1">
                             <div 
                               className="h-full bg-primary transition-all"
@@ -128,13 +171,13 @@ export default async function AdminRafflesPage() {
                             />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {progress.toFixed(1)}%
+                            {formatPercentage(progress)}
                           </p>
                         </div>
                       </td>
                       <td className="p-4">
                         <p className="font-semibold text-primary">
-                          R$ {revenue.toFixed(2).replace('.', ',')}
+                          {formatCurrency(revenue)}
                         </p>
                       </td>
                       <td className="p-4">
@@ -148,6 +191,22 @@ export default async function AdminRafflesPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
+                          {raffle.status === 'active' && (
+                            <Link
+                              href={`/admin/raffles/${raffle.id}/draw`}
+                              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                              title="Realizar Sorteio"
+                            >
+                              🎲
+                            </Link>
+                          )}
+                          <Link
+                            href={`/admin/raffles/${raffle.id}/metrics`}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                            title="Métricas"
+                          >
+                            📊
+                          </Link>
                           <Link
                             href={`/admin/raffles/${raffle.id}/edit`}
                             className="p-2 hover:bg-secondary rounded-lg transition-colors"
@@ -155,12 +214,6 @@ export default async function AdminRafflesPage() {
                           >
                             ✏️
                           </Link>
-                          <button
-                            className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                            title="Visualizar"
-                          >
-                            👁️
-                          </button>
                           <button
                             className="p-2 hover:bg-secondary rounded-lg transition-colors"
                             title="Excluir"
@@ -177,6 +230,7 @@ export default async function AdminRafflesPage() {
           </table>
         </div>
       </div>
+      )}
     </div>
   )
 }

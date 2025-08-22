@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import LastNumbersAlert from '@/components/raffle/LastNumbersAlert'
 
 async function getRaffles() {
   const supabase = await createClient()
@@ -7,6 +8,7 @@ async function getRaffles() {
     .from('raffles')
     .select('*')
     .eq('status', 'active')
+    .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
     .limit(6)
 
@@ -67,8 +69,30 @@ export default async function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {raffles.map((raffle) => (
+            {raffles.map((raffle) => {
+              // Calcular progresso
+              const soldNumbers = raffle.total_numbers - (raffle.available_numbers || raffle.total_numbers)
+              const realProgress = raffle.total_numbers > 0 
+                ? Math.round((soldNumbers / raffle.total_numbers) * 100)
+                : 0
+              
+              // Usar progresso manual se configurado
+              const progressPercentage = raffle.progress_mode === 'manual' 
+                ? (raffle.manual_progress || 0)
+                : realProgress
+              const availablePercentage = 100 - progressPercentage
+              
+              return (
               <div key={raffle.id} className="raffle-card card-hover group">
+                {/* Alerta de últimos números no card */}
+                {progressPercentage >= 80 && (
+                  <LastNumbersAlert 
+                    progressPercentage={progressPercentage}
+                    availableNumbers={raffle.available_numbers || 0}
+                    variant="card"
+                  />
+                )}
+                
                 <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-secondary">
                   {raffle.image_url && (
                     <img
@@ -96,13 +120,13 @@ export default async function HomePage() {
                   <div className="w-full bg-secondary rounded-full h-3">
                     <div 
                       className="gradient-primary h-3 rounded-full transition-all duration-500"
-                      style={{ width: '30%' }}
+                      style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
 
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">30% vendido</span>
-                    <span className="text-primary font-semibold">70% disponível</span>
+                    <span className="text-muted-foreground">{progressPercentage}% vendido</span>
+                    <span className="text-primary font-semibold">{availablePercentage}% disponível</span>
                   </div>
 
                   <Link
@@ -113,7 +137,8 @@ export default async function HomePage() {
                   </Link>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
 
           {raffles.length === 0 && (
