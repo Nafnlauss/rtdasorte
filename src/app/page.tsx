@@ -83,60 +83,61 @@ export default async function HomePage() {
               const availablePercentage = 100 - progressPercentage
               
               return (
-              <div key={raffle.id} className="raffle-card card-hover group">
-                {/* Alerta de últimos números no card */}
-                {progressPercentage >= 80 && (
-                  <LastNumbersAlert 
-                    progressPercentage={progressPercentage}
-                    availableNumbers={raffle.available_numbers || 0}
-                    variant="card"
-                  />
-                )}
-                
-                <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-secondary">
-                  {raffle.image_url && (
-                    <img
-                      src={raffle.image_url}
-                      alt={raffle.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                <Link 
+                  key={raffle.id} 
+                  href={`/raffles/${raffle.id}`}
+                  className="raffle-card card-hover block"
+                >
+                  {/* Alerta de últimos números no card */}
+                  {progressPercentage >= 80 && (
+                    <LastNumbersAlert 
+                      progressPercentage={progressPercentage}
+                      availableNumbers={raffle.available_numbers || 0}
+                      variant="card"
                     />
                   )}
-                  <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
-                    R$ {raffle.number_price}
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-bold mb-2">{raffle.title}</h3>
-                <p className="text-muted-foreground mb-4 line-clamp-2">
-                  {raffle.description}
-                </p>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total de números</span>
-                    <span className="font-semibold">{raffle.total_numbers.toLocaleString('pt-BR')}</span>
+                  
+                  <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-secondary">
+                    {raffle.image_url && (
+                      <img
+                        src={raffle.image_url}
+                        alt={raffle.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
+                      R$ {raffle.number_price}
+                    </div>
                   </div>
 
-                  <div className="w-full bg-secondary rounded-full h-3">
-                    <div 
-                      className="gradient-primary h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
+                  <h3 className="text-xl font-bold mb-2">{raffle.title}</h3>
+                  <p className="text-muted-foreground mb-4 line-clamp-2">
+                    {raffle.description}
+                  </p>
 
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">{progressPercentage}% vendido</span>
-                    <span className="text-primary font-semibold">{availablePercentage}% disponível</span>
-                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total de números</span>
+                      <span className="font-semibold">{raffle.total_numbers.toLocaleString('pt-BR')}</span>
+                    </div>
 
-                  <Link
-                    href={`/raffles/${raffle.id}`}
-                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
-                  >
-                    Participar Agora
-                  </Link>
-                </div>
-              </div>
+                    <div className="w-full bg-secondary rounded-full h-3">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">{progressPercentage}% vendido</span>
+                      <span className="text-primary font-semibold">{availablePercentage}% disponível</span>
+                    </div>
+
+                    <div className="w-full inline-flex items-center justify-center px-4 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-opacity font-semibold">
+                      Participar Agora
+                    </div>
+                  </div>
+                </Link>
               )
             })}
           </div>

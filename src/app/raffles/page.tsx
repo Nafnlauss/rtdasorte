@@ -69,84 +69,84 @@ export default async function RafflesPage() {
                   href={`/raffles/${raffle.id}`}
                   className="raffle-card card-hover block p-4 sm:p-5 md:p-6"
                 >
-                  {/* Alerta de últimos números */}
-                  {progressPercentage >= 80 && (
-                    <LastNumbersAlert 
-                      progressPercentage={progressPercentage}
-                      availableNumbers={raffle.available_numbers || 0}
-                      variant="card"
-                    />
-                  )}
-                  
-                  {raffle.image_url && (
-                    <div className="h-40 sm:h-44 md:h-48 mb-3 sm:mb-4 rounded-lg overflow-hidden bg-secondary">
-                      <img
-                        src={raffle.image_url}
-                        alt={raffle.title}
-                        className="w-full h-full object-cover"
+                    {/* Alerta de últimos números */}
+                    {progressPercentage >= 80 && (
+                      <LastNumbersAlert 
+                        progressPercentage={progressPercentage}
+                        availableNumbers={raffle.available_numbers || 0}
+                        variant="card"
                       />
-                    </div>
-                  )}
-                  
-                  <div className="space-y-2 sm:space-y-3">
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg line-clamp-1">{raffle.title}</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {raffle.description}
-                      </p>
-                    </div>
+                    )}
                     
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <span className="text-muted-foreground">Valor:</span>
-                        <span className="font-bold text-primary">
-                          R$ {(raffle.number_price || raffle.ticket_price || 0).toFixed(2).replace('.', ',')}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <span className="text-muted-foreground">Disponíveis:</span>
-                        <span className="font-semibold">
-                          {(raffle.available_numbers || 0).toLocaleString('pt-BR')} de {(raffle.total_numbers || 0).toLocaleString('pt-BR')}
-                        </span>
-                      </div>
-                      
-                      {raffle.draw_date && (
-                        <div className="flex items-center justify-between text-xs sm:text-sm">
-                          <span className="text-muted-foreground">Sorteio:</span>
-                          <span className="font-semibold">
-                            {new Date(raffle.draw_date).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <div className="w-full bg-secondary rounded-full h-1.5 sm:h-2 overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
-                          style={{ 
-                            width: `${progressPercentage}%` 
-                          }}
+                    {raffle.image_url && (
+                      <div className="h-40 sm:h-44 md:h-48 mb-3 sm:mb-4 rounded-lg overflow-hidden bg-secondary">
+                        <img
+                          src={raffle.image_url}
+                          alt={raffle.title}
+                          className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="text-[10px] sm:text-xs text-center text-muted-foreground">
-                        {progressPercentage}% vendido
-                      </p>
-                    </div>
+                    )}
                     
-                    <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-border">
-                      <span className={`text-[10px] sm:text-xs font-semibold ${
-                        raffle.status === 'active' ? 'text-green-500' : 'text-yellow-500'
-                      }`}>
-                        {raffle.status === 'active' ? '● Ativa' : '● Pausada'}
-                      </span>
-                      <span className="text-xs sm:text-sm font-semibold text-primary">
-                        Ver Detalhes →
-                      </span>
+                    <div className="space-y-2 sm:space-y-3">
+                      <div>
+                        <h3 className="font-bold text-base sm:text-lg line-clamp-1">{raffle.title}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {raffle.description}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <div className="flex items-center justify-between text-xs sm:text-sm">
+                          <span className="text-muted-foreground">Valor:</span>
+                          <span className="font-bold text-primary">
+                            R$ {(raffle.number_price || raffle.ticket_price || 0).toFixed(2).replace('.', ',')}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-xs sm:text-sm">
+                          <span className="text-muted-foreground">Disponíveis:</span>
+                          <span className="font-semibold">
+                            {(raffle.available_numbers || 0).toLocaleString('pt-BR')} de {(raffle.total_numbers || 0).toLocaleString('pt-BR')}
+                          </span>
+                        </div>
+                        
+                        {raffle.draw_date && (
+                          <div className="flex items-center justify-between text-xs sm:text-sm">
+                            <span className="text-muted-foreground">Sorteio:</span>
+                            <span className="font-semibold">
+                              {new Date(raffle.draw_date).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <div className="w-full bg-secondary rounded-full h-1.5 sm:h-2 overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
+                            style={{ 
+                              width: `${progressPercentage}%` 
+                            }}
+                          />
+                        </div>
+                        <p className="text-[10px] sm:text-xs text-center text-muted-foreground">
+                          {progressPercentage}% vendido
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-border">
+                        <span className={`text-[10px] sm:text-xs font-semibold ${
+                          raffle.status === 'active' ? 'text-green-500' : 'text-yellow-500'
+                        }`}>
+                          {raffle.status === 'active' ? '● Ativa' : '● Pausada'}
+                        </span>
+                        <span className="text-xs sm:text-sm font-semibold text-primary">
+                          Ver Detalhes →
+                        </span>
+                      </div>
                     </div>
-                  </div>
                 </Link>
               )
             })}
