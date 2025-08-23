@@ -30,8 +30,21 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
+    // Validações
+    if (!formData.name || !formData.phone || !formData.email || !formData.cpf || !formData.password) {
+      setError('Todos os campos são obrigatórios')
+      setLoading(false)
+      return
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem')
+      setLoading(false)
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('A senha deve ter no mínimo 6 caracteres')
       setLoading(false)
       return
     }
@@ -40,7 +53,7 @@ export default function RegisterPage() {
       const supabase = createClient()
       
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email || `${formData.phone}@raffle.app`,
+        email: formData.email,
         password: formData.password,
         options: {
           data: {
@@ -60,7 +73,7 @@ export default function RegisterPage() {
             id: authData.user.id,
             name: formData.name,
             phone: formData.phone,
-            email: formData.email || null,
+            email: formData.email,
             cpf: formData.cpf
           })
 
@@ -125,15 +138,17 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-2">
-              E-mail (opcional)
+              E-mail *
             </label>
             <input
               id="email"
               name="email"
               type="email"
+              required
               value={formData.email}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="seu@email.com"
             />
           </div>
 
