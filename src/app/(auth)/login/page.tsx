@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState('')
+  const [loginField, setLoginField] = useState('') // Email ou telefone
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,8 +22,27 @@ export default function LoginPage() {
     try {
       const supabase = createClient()
       
+      // Verificar se é email ou telefone
+      const isEmail = loginField.includes('@')
+      let loginEmail = loginField
+      
+      if (!isEmail) {
+        // Se for telefone, buscar o usuário pelo telefone
+        const { data: userData } = await supabase
+          .from('users')
+          .select('email')
+          .eq('phone', loginField)
+          .single()
+        
+        if (!userData) {
+          throw new Error('Usuário não encontrado')
+        }
+        
+        loginEmail = userData.email
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${phone}@raffle.app`,
+        email: loginEmail,
         password: password,
       })
 
@@ -54,7 +73,7 @@ export default function LoginPage() {
         <div className="text-center">
           <h2 className="text-3xl font-bold">Entrar na sua conta</h2>
           <p className="mt-2 text-muted-foreground">
-            Use seu telefone e senha para acessar
+            Use seu e-mail ou telefone para acessar
           </p>
         </div>
 
@@ -67,17 +86,17 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                Telefone
+              <label htmlFor="loginField" className="block text-sm font-medium mb-2">
+                E-mail ou Telefone
               </label>
               <input
-                id="phone"
-                type="tel"
+                id="loginField"
+                type="text"
                 required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={loginField}
+                onChange={(e) => setLoginField(e.target.value)}
                 className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="(11) 99999-9999"
+                placeholder="seu@email.com ou (11) 99999-9999"
               />
             </div>
 
@@ -107,19 +126,16 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center space-y-2">
+          <div className="flex items-center justify-between text-sm">
             <Link
               href="/forgot-password"
-              className="text-sm text-primary hover:underline"
+              className="text-primary hover:underline"
             >
               Esqueceu sua senha?
             </Link>
-            <p className="text-sm text-muted-foreground">
-              Não tem uma conta?{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Cadastre-se
-              </Link>
-            </p>
+            <Link href="/register" className="text-primary hover:underline">
+              Criar conta
+            </Link>
           </div>
         </form>
       </div>
