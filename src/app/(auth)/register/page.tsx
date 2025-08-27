@@ -82,7 +82,20 @@ export default function RegisterPage() {
         router.push('/login')
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta')
+      // Traduzir mensagens de erro comuns
+      let errorMessage = 'Erro ao criar conta'
+      
+      if (err.message?.includes('duplicate key') || err.message?.includes('already registered')) {
+        errorMessage = 'Cliente já cadastrado com este e-mail ou CPF'
+      } else if (err.message?.includes('users_pkey')) {
+        errorMessage = 'Cliente já cadastrado'
+      } else if (err.message?.includes('invalid email')) {
+        errorMessage = 'E-mail inválido'
+      } else if (err.message?.includes('password')) {
+        errorMessage = 'Senha deve ter pelo menos 6 caracteres'
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

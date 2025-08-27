@@ -61,7 +61,20 @@ export default function LoginPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login')
+      // Traduzir mensagens de erro comuns
+      let errorMessage = 'Erro ao fazer login'
+      
+      if (err.message?.includes('Email not confirmed')) {
+        errorMessage = 'E-mail não confirmado. Verifique sua caixa de entrada'
+      } else if (err.message?.includes('Invalid login')) {
+        errorMessage = 'E-mail ou senha incorretos'
+      } else if (err.message?.includes('User not found')) {
+        errorMessage = 'Usuário não encontrado'
+      } else if (err.message?.includes('Usuário não encontrado')) {
+        errorMessage = 'Usuário não encontrado'
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
