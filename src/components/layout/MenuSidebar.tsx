@@ -200,20 +200,6 @@ export default function MenuSidebar({ isOpen, setIsOpen }: MenuSidebarProps) {
               </Link>
             </div>
 
-            {/* Admin Access */}
-            {user && (
-              <div className="py-2 border-t border-border">
-                <Link
-                  href="/admin"
-                  className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-secondary hover:text-primary transition-colors"
-                  onClick={handleLinkClick}
-                >
-                  <span className="text-xl">⚙️</span>
-                  <span>Painel Administrativo</span>
-                </Link>
-              </div>
-            )}
-
             {/* Auth Actions */}
             <div className="py-2 border-t border-border">
               {user ? (

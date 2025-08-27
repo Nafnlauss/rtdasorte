@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCartStore } from '@/stores/useCartStore'
 
 interface QuickButton {
   quantity: number
@@ -162,11 +163,21 @@ export default function RandomNumberSelector({
     }
   }
   
+  const addToCart = useCartStore((state) => state.addItem)
+  
   const handleCheckout = () => {
     if (selectedNumbers.length === 0) return
     
-    // Aqui você implementaria a lógica de checkout
-    console.log('Checkout com números:', selectedNumbers)
+    // Adicionar ao carrinho
+    addToCart({
+      raffleId,
+      raffleTitle,
+      numbers: selectedNumbers,
+      pricePerNumber: numberPrice,
+      totalPrice: selectedNumbers.length * numberPrice
+    })
+    
+    // Redirecionar para checkout
     router.push('/checkout')
   }
   
@@ -346,16 +357,18 @@ export default function RandomNumberSelector({
             Seus Números da Sorte
           </h3>
           
-          <div className="grid grid-cols-5 sm:grid-cols-8 gap-2 mb-4">
-            {selectedNumbers.map((num, index) => (
-              <div
-                key={index}
-                className="bg-primary text-primary-foreground rounded-lg p-2 text-center font-mono font-bold text-sm animate-bounce"
-                style={{ animationDelay: `${index * 50}ms`, animationDuration: '0.5s' }}
-              >
-                {formatNumber(num)}
-              </div>
-            ))}
+          <div className="max-h-[200px] overflow-y-auto mb-4 p-2 bg-background rounded-lg">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+              {selectedNumbers.map((num, index) => (
+                <div
+                  key={index}
+                  className="bg-primary text-primary-foreground rounded-lg aspect-square flex items-center justify-center font-mono font-bold text-xs sm:text-sm animate-bounce"
+                  style={{ animationDelay: `${index * 50}ms`, animationDuration: '0.5s' }}
+                >
+                  {formatNumber(num)}
+                </div>
+              ))}
+            </div>
           </div>
           
           <div className="flex gap-2">
