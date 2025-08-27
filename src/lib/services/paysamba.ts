@@ -94,6 +94,30 @@ class PaySambaService {
    * Cria um novo pagamento PIX
    */
   async createPixPayment(data: CreatePixPaymentData): Promise<PaySambaPixPayment> {
+    // Em modo desenvolvimento, gerar PIX de teste
+    if (process.env.NODE_ENV === 'development' || !this.config.apiToken) {
+      console.log('PaySamba: Gerando PIX de teste (modo desenvolvimento)')
+      
+      const testPixCode = `00020126330014BR.GOV.BCB.PIX0111${Date.now()}520400005303986540${data.amount.toFixed(2)}5802BR5925RT DA SORTE6009SAO PAULO62070503***6304A9C7`
+      
+      return {
+        id: `test_${Date.now()}`,
+        status: 'pending',
+        amount: data.amount,
+        pix_code: testPixCode,
+        pix_qrcode: testPixCode, // Na produção seria uma URL
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+        customer: {
+          name: data.customer.name,
+          cpf_cnpj: data.customer.cpf_cnpj,
+          email: data.customer.email,
+          phone: data.customer.phone
+        },
+        metadata: data.metadata
+      }
+    }
+
     const payload = {
       amount: Math.round(data.amount * 100), // Converter para centavos
       payment_method: 'pix',
@@ -111,10 +135,14 @@ class PaySambaService {
       sandbox: this.config.isSandbox
     }
 
+    console.log('PaySamba: Criando pagamento PIX', payload)
+
     const response = await this.request<any>('/payments', {
       method: 'POST',
       body: JSON.stringify(payload)
     })
+
+    console.log('PaySamba: Resposta recebida', response)
 
     // Mapear resposta para nosso formato
     return {

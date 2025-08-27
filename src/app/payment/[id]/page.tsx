@@ -209,10 +209,10 @@ export default function PaymentPage() {
               Escaneie o QR Code
             </h2>
             
-            {paymentData.transaction.pix_qrcode ? (
+            {paymentData.transaction.pix_code ? (
               <div className="bg-white p-4 rounded-lg mb-4">
                 <QRCodeSVG
-                  value={paymentData.transaction.pix_code || ''}
+                  value={paymentData.transaction.pix_code}
                   size={280}
                   className="w-full h-auto max-w-[280px] mx-auto"
                 />
@@ -233,9 +233,13 @@ export default function PaymentPage() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={paymentData.transaction.pix_code || 'Gerando código...'}
+                  value={paymentData.transaction.pix_code ? 
+                    (paymentData.transaction.pix_code.length > 50 ? 
+                      paymentData.transaction.pix_code.substring(0, 50) + '...' : 
+                      paymentData.transaction.pix_code) : 
+                    'Gerando código...'}
                   readOnly
-                  className="flex-1 px-3 py-2 bg-secondary rounded-lg text-sm font-mono"
+                  className="flex-1 px-3 py-2 bg-secondary rounded-lg text-sm font-mono text-xs"
                 />
                 <button
                   onClick={copyPixCode}
@@ -255,6 +259,11 @@ export default function PaymentPage() {
                   )}
                 </button>
               </div>
+              {paymentData.transaction.pix_code && (
+                <p className="text-xs text-muted-foreground">
+                  Clique em "Copiar" para copiar o código completo
+                </p>
+              )}
             </div>
           </div>
 

@@ -12,8 +12,6 @@ export default function CheckoutPage() {
   const { user } = useAuthStore()
   const { items, getTotalPrice, clearCart } = useCartStore()
   const [isProcessing, setIsProcessing] = useState(false)
-  const [pixCode, setPixCode] = useState('')
-  const [showPix, setShowPix] = useState(false)
 
   useEffect(() => {
     if (items.length === 0) {
@@ -33,114 +31,56 @@ export default function CheckoutPage() {
       return
     }
 
+    if (!user.cpf || !user.phone) {
+      alert('Por favor, complete seu cadastro com CPF e telefone antes de continuar.')
+      router.push('/profile')
+      return
+    }
+
     setIsProcessing(true)
 
     try {
-      // Aqui você implementaria a integração real com o gateway de pagamento PIX
-      // Por enquanto, vamos simular
-      
-      // Gerar código PIX simulado
-      const code = `00020126330014BR.GOV.BCB.PIX0111${Date.now()}520400005303986540${getTotalPrice().toFixed(2)}5802BR5925RIFAS ONLINE6009SAO PAULO62070503***63041D3D`
-      
-      setPixCode(code)
-      setShowPix(true)
+      // Preparar dados para cada rifa
+      for (const item of items) {
+        const response = await fetch('/api/checkout/create-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            raffleId: item.raffleId,
+            numbers: item.numbers,
+            customer: {
+              name: user.name,
+              cpf: user.cpf.replace(/\D/g, ''),
+              email: user.email,
+              phone: user.phone.replace(/\D/g, '')
+            }
+          })
+        })
 
-      // Salvar pedido no banco (implementar depois)
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Erro ao criar pagamento')
+        }
+
+        const data = await response.json()
+        
+        // Limpar carrinho e redirecionar para página de pagamento
+        clearCart()
+        router.push(data.redirect_url)
+        return
+      }
       
     } catch (error) {
       console.error('Erro ao processar pagamento:', error)
-      alert('Erro ao processar pagamento. Tente novamente.')
+      alert(error instanceof Error ? error.message : 'Erro ao processar pagamento. Tente novamente.')
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const handleCopyPix = () => {
-    navigator.clipboard.writeText(pixCode)
-    alert('Código PIX copiado!')
-  }
-
   const totalPrice = getTotalPrice()
-
-  if (showPix) {
-    return (
-      <div className="min-h-screen bg-background py-12">
-        <div className="container-wrapper max-w-2xl">
-          <div className="raffle-card">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-3xl">📱</span>
-              </div>
-              <h1 className="text-2xl font-bold mb-2">Pagamento via PIX</h1>
-              <p className="text-muted-foreground">
-                Escaneie o QR Code ou copie o código para pagar
-              </p>
-            </div>
-
-            {/* QR Code Placeholder */}
-            <div className="bg-white p-8 rounded-lg mb-6">
-              <div className="w-64 h-64 mx-auto bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-500">QR Code PIX</span>
-              </div>
-            </div>
-
-            {/* Código PIX */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Código PIX</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={pixCode}
-                    readOnly
-                    className="flex-1 px-4 py-2 rounded-lg bg-secondary border border-border text-sm"
-                  />
-                  <button
-                    onClick={handleCopyPix}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    Copiar
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-4">
-                <p className="text-yellow-500 text-sm">
-                  ⏱️ Você tem 10 minutos para realizar o pagamento
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <span className="text-lg">Total a pagar:</span>
-                <span className="text-2xl font-bold text-primary">
-                  R$ {totalPrice.toFixed(2).replace('.', ',')}
-                </span>
-              </div>
-
-              <button
-                onClick={() => {
-                  clearCart()
-                  router.push('/my-tickets')
-                }}
-                className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors"
-              >
-                Já fiz o pagamento
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowPix(false)
-                }}
-                className="w-full py-3 text-foreground hover:bg-secondary rounded-lg transition-colors"
-              >
-                Voltar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-background py-12">
