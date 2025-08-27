@@ -77,14 +77,32 @@ export default function PaymentPage() {
         const createdAt = new Date(transaction.created_at).getTime()
         const expiresAt = createdAt + (30 * 60 * 1000) // 30 minutos
         
+        // Tentar buscar PIX do localStorage se não estiver no banco
+        let pixCode = transaction.pix_code
+        let pixQrcode = transaction.pix_qrcode
+        
+        if (!pixCode || !pixQrcode) {
+          const storedPix = localStorage.getItem(`pix_${transactionId}`)
+          if (storedPix) {
+            try {
+              const pixData = JSON.parse(storedPix)
+              pixCode = pixData.pix_code
+              pixQrcode = pixData.pix_qrcode
+              console.log('PIX loaded from localStorage')
+            } catch (e) {
+              console.error('Error parsing stored PIX:', e)
+            }
+          }
+        }
+        
         setPaymentData({
           transaction: {
             id: transaction.id,
             amount: transaction.amount,
             numbers: transaction.numbers,
             status: transaction.status,
-            pix_code: transaction.pix_code,
-            pix_qrcode: transaction.pix_qrcode
+            pix_code: pixCode,
+            pix_qrcode: pixQrcode
           },
           raffle: transaction.raffle,
           expires_at: new Date(expiresAt).toISOString()

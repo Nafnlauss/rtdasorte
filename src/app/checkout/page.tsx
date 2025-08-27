@@ -115,6 +115,16 @@ export default function CheckoutPage() {
         
         console.log('Payment created:', data)
         
+        // Salvar dados do PIX temporariamente no localStorage
+        if (data.payment?.pix_code) {
+          localStorage.setItem(`pix_${data.transaction.id}`, JSON.stringify({
+            pix_code: data.payment.pix_code,
+            pix_qrcode: data.payment.pix_qrcode,
+            expires_at: data.payment.expires_at,
+            amount: data.payment.amount
+          }))
+        }
+        
         // Redirecionar para página de pagamento SEM limpar carrinho ainda
         // O carrinho será limpo após confirmação do pagamento
         router.push(data.redirect_url)

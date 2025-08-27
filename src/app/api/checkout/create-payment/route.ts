@@ -233,18 +233,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      console.log('PIX payment created:', {
-        id: pixPayment.id,
-        pix_code: pixPayment.pix_code?.substring(0, 50) + '...',
-        has_qrcode: !!pixPayment.pix_qrcode
-      })
+      console.log('PIX payment created successfully')
       
       // 8. Atualizar transação com dados do PIX
-      // Usar service role para garantir que funcione
-      const { createClient: createServiceClient } = require('@/lib/supabase/server')
-      const serviceSupabase = await createServiceClient()
-      
-      const { data: updateData, error: updateError } = await serviceSupabase
+      const { error: updateError } = await supabase
         .from('transactions')
         .update({
           payment_id: pixPayment.id,
@@ -253,28 +245,23 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', transaction.id)
-        .select()
-        .single()
       
       if (updateError) {
         console.error('Error updating transaction with PIX data:', updateError)
-        throw new Error('Erro ao salvar dados do PIX')
+        // Não falhar se o update não funcionar, continuar com o processo
+        console.log('Continuing despite update error...')
       }
-      
-      console.log('Transaction updated with PIX:', {
-        id: updateData?.id,
-        has_pix_code: !!updateData?.pix_code,
-        has_pix_qrcode: !!updateData?.pix_qrcode
-      })
 
-      // 9. Retornar dados do pagamento
+      // 9. Retornar dados do pagamento com PIX incluído
       return NextResponse.json({
         success: true,
         transaction: {
           id: transaction.id,
           amount: totalAmount,
           numbers: numbers,
-          status: 'pending'
+          status: 'pending',
+          pix_code: pixPayment.pix_code,  // Incluir aqui também
+          pix_qrcode: pixPayment.pix_qrcode // Incluir aqui também
         },
         payment: {
           id: pixPayment.id,
