@@ -233,10 +233,18 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      console.log('PIX payment created:', pixPayment)
+      console.log('PIX payment created:', {
+        id: pixPayment.id,
+        pix_code: pixPayment.pix_code?.substring(0, 50) + '...',
+        has_qrcode: !!pixPayment.pix_qrcode
+      })
       
       // 8. Atualizar transação com dados do PIX
-      const { error: updateError } = await supabase
+      // Usar service role para garantir que funcione
+      const { createClient: createServiceClient } = require('@/lib/supabase/server')
+      const serviceSupabase = await createServiceClient()
+      
+      const { data: updateData, error: updateError } = await serviceSupabase
         .from('transactions')
         .update({
           payment_id: pixPayment.id,
@@ -245,10 +253,19 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', transaction.id)
+        .select()
+        .single()
       
       if (updateError) {
         console.error('Error updating transaction with PIX data:', updateError)
+        throw new Error('Erro ao salvar dados do PIX')
       }
+      
+      console.log('Transaction updated with PIX:', {
+        id: updateData?.id,
+        has_pix_code: !!updateData?.pix_code,
+        has_pix_qrcode: !!updateData?.pix_qrcode
+      })
 
       // 9. Retornar dados do pagamento
       return NextResponse.json({
