@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
       })
 
     } catch (paymentError: any) {
-      console.error('PaySamba error:', paymentError)
+      console.error('Payment creation error:', paymentError)
       
       // Reverter reserva e transação em caso de erro
       await supabase
