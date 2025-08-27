@@ -22,8 +22,26 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!user) {
       router.push('/login?redirect=/checkout')
+    } else {
+      // Garantir que temos os dados mais recentes do usuário
+      loadUserData()
     }
-  }, [user, router])
+  }, [])
+  
+  const loadUserData = async () => {
+    if (!user?.id) return
+    
+    const { data: updatedUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+    
+    if (updatedUser) {
+      console.log('Updated user data:', updatedUser)
+      useAuthStore.getState().setUser(updatedUser)
+    }
+  }
 
   const handlePayment = async () => {
     if (!user) {
@@ -31,6 +49,8 @@ export default function CheckoutPage() {
       return
     }
 
+    console.log('User data from store:', user)
+    
     if (!user.cpf || !user.phone) {
       alert('Por favor, complete seu cadastro com CPF e telefone antes de continuar.')
       router.push('/profile')
@@ -42,6 +62,21 @@ export default function CheckoutPage() {
     try {
       // Preparar dados para cada rifa
       for (const item of items) {
+        // Limpar CPF e telefone
+        const cleanCpf = user.cpf.replace(/\D/g, '')
+        const cleanPhone = user.phone.replace(/\D/g, '')
+        
+        console.log('Sending payment request:', {
+          raffleId: item.raffleId,
+          numbers: item.numbers,
+          customer: {
+            name: user.name,
+            cpf: cleanCpf,
+            email: user.email,
+            phone: cleanPhone
+          }
+        })
+        
         const response = await fetch('/api/checkout/create-payment', {
           method: 'POST',
           headers: {
@@ -52,19 +87,33 @@ export default function CheckoutPage() {
             numbers: item.numbers,
             customer: {
               name: user.name,
-              cpf: user.cpf.replace(/\D/g, ''),
+              cpf: cleanCpf,
               email: user.email,
-              phone: user.phone.replace(/\D/g, '')
+              phone: cleanPhone
             }
           })
         })
 
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Erro ao criar pagamento')
-        }
-
         const data = await response.json()
+        
+        if (!response.ok) {
+          console.error('Payment error:', data)
+          
+          // Mensagens de erro mais específicas
+          if (data.details) {
+            if (Array.isArray(data.details)) {
+              const fieldErrors = data.details.map((err: any) => 
+                `${err.path?.join('.')}: ${err.message}`
+              ).join('\n')
+              throw new Error(`Erro de validação:\n${fieldErrors}`)
+            } else {
+              throw new Error(data.details)
+            }
+          }
+          throw new Error(data.error || 'Erro ao criar pagamento')
+        }
+        
+        console.log('Payment created:', data)
         
         // Limpar carrinho e redirecionar para página de pagamento
         clearCart()
