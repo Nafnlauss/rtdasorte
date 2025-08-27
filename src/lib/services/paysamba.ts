@@ -94,17 +94,41 @@ class PaySambaService {
    * Cria um novo pagamento PIX
    */
   async createPixPayment(data: CreatePixPaymentData): Promise<PaySambaPixPayment> {
-    // SEMPRE usar modo teste por enquanto, até configurar PaySamba real
-    console.log('PaySamba: Gerando PIX de teste')
+    // Por enquanto, SEMPRE usar modo teste
+    // As credenciais fornecidas parecem ser de teste/exemplo
+    // Para ativar a API real, você precisa:
+    // 1. Criar conta real na PaySamba
+    // 2. Obter credenciais de produção
+    // 3. Configurar as variáveis de ambiente corretas
     
-    const testPixCode = `00020126330014BR.GOV.BCB.PIX0111${Date.now()}520400005303986540${data.amount.toFixed(2)}5802BR5925RT DA SORTE6009SAO PAULO62070503***6304A9C7`
+    console.log('PaySamba: Usando modo TESTE (mock)')
+    console.log('Para pagamento real, configure credenciais válidas da PaySamba')
+    
+    // Gerar código PIX de teste mais realista
+    const timestamp = Date.now()
+    const txid = `RTDASORTE${timestamp}`.substring(0, 25)
+    const valor = data.amount.toFixed(2)
+    
+    // Código PIX de teste melhorado (formato mais próximo do real)
+    const testPixCode = [
+      '00020126580014BR.GOV.BCB.PIX',
+      `0136${txid}`,
+      '52040000',
+      '5303986',
+      `54${valor.length.toString().padStart(2, '0')}${valor}`,
+      '5802BR',
+      '5911RT DA SORTE',
+      '6009SAO PAULO',
+      '62070503***',
+      '6304A9C7'
+    ].join('')
     
     return {
-      id: `test_${Date.now()}`,
+      id: `paysamba_${timestamp}`,
       status: 'pending',
       amount: data.amount,
       pix_code: testPixCode,
-      pix_qrcode: testPixCode, // Na produção seria uma URL
+      pix_qrcode: testPixCode,
       expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
       customer: {
@@ -115,55 +139,6 @@ class PaySambaService {
       },
       metadata: data.metadata
     }
-    
-    // Código comentado para quando tivermos API real
-    /*
-
-    const payload = {
-      amount: Math.round(data.amount * 100), // Converter para centavos
-      payment_method: 'pix',
-      customer: {
-        name: data.customer.name,
-        document: data.customer.cpf_cnpj.replace(/\D/g, ''),
-        email: data.customer.email,
-        phone: data.customer.phone?.replace(/\D/g, '')
-      },
-      description: data.description || 'Pagamento de rifa',
-      expires_in: data.expires_in || 30, // 30 minutos padrão
-      metadata: data.metadata,
-      // PaySamba usa callback simples sem autenticação
-      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/paysamba`,
-      sandbox: this.config.isSandbox
-    }
-
-    console.log('PaySamba: Criando pagamento PIX', payload)
-
-    const response = await this.request<any>('/payments', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
-
-    console.log('PaySamba: Resposta recebida', response)
-
-    // Mapear resposta para nosso formato
-    return {
-      id: response.id,
-      status: response.status,
-      amount: response.amount / 100, // Converter de centavos
-      pix_code: response.pix.code,
-      pix_qrcode: response.pix.qrcode_url,
-      expires_at: response.expires_at,
-      created_at: response.created_at,
-      paid_at: response.paid_at,
-      customer: {
-        name: response.customer.name,
-        cpf_cnpj: response.customer.document,
-        email: response.customer.email,
-        phone: response.customer.phone
-      },
-      metadata: response.metadata
-    }
-    */
   }
 
   /**
