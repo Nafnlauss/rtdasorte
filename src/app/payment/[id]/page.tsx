@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useCartStore } from '@/stores/useCartStore'
 import { QRCodeSVG } from 'qrcode.react'
 import { Copy, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 
@@ -26,6 +27,7 @@ interface PaymentData {
 export default function PaymentPage() {
   const params = useParams()
   const router = useRouter()
+  const clearCart = useCartStore((state) => state.clearCart)
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -60,6 +62,7 @@ export default function PaymentPage() {
 
         // Se já está pago, redirecionar para página de sucesso
         if (transaction.status === 'completed') {
+          clearCart() // Limpar carrinho se já estiver pago
           router.push(`/payment/${transactionId}/success`)
           return
         }
@@ -134,6 +137,7 @@ export default function PaymentPage() {
 
       if (transaction?.status === 'completed') {
         clearInterval(checkInterval)
+        clearCart() // Limpar carrinho apenas após confirmação do pagamento
         router.push(`/payment/${transactionId}/success`)
       }
     }, 5000) // Verificar a cada 5 segundos

@@ -115,8 +115,8 @@ export default function CheckoutPage() {
         
         console.log('Payment created:', data)
         
-        // Limpar carrinho e redirecionar para página de pagamento
-        clearCart()
+        // Redirecionar para página de pagamento SEM limpar carrinho ainda
+        // O carrinho será limpo após confirmação do pagamento
         router.push(data.redirect_url)
         return
       }
