@@ -213,6 +213,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Criar pagamento no PaySamba
+    console.log('Creating PIX payment...')
     try {
       const pixPayment = await paySamba.createPixPayment({
         amount: totalAmount,
@@ -232,8 +233,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      console.log('PIX payment created:', pixPayment)
+      
       // 8. Atualizar transação com dados do PIX
-      await supabase
+      const { error: updateError } = await supabase
         .from('transactions')
         .update({
           payment_id: pixPayment.id,
@@ -242,6 +245,10 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', transaction.id)
+      
+      if (updateError) {
+        console.error('Error updating transaction with PIX data:', updateError)
+      }
 
       // 9. Retornar dados do pagamento
       return NextResponse.json({
