@@ -9,6 +9,7 @@ import { formatCurrency, formatNumber, formatPercentage } from '@/lib/utils/form
 export default function AdminRafflesPage() {
   const [raffles, setRaffles] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -39,7 +40,30 @@ export default function AdminRafflesPage() {
     }
 
     try {
-      // Primeiro deletar os números da rifa
+      // Mostrar loading para esta rifa específica
+      setDeletingId(raffleId)
+      
+      // Primeiro deletar as transações relacionadas
+      const { error: transactionsError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('raffle_id', raffleId)
+      
+      if (transactionsError) {
+        console.error('Error deleting transactions:', transactionsError)
+      }
+
+      // Deletar os ganhadores
+      const { error: winnersError } = await supabase
+        .from('winners')
+        .delete()
+        .eq('raffle_id', raffleId)
+      
+      if (winnersError) {
+        console.error('Error deleting winners:', winnersError)
+      }
+
+      // Deletar os números da rifa
       const { error: numbersError } = await supabase
         .from('raffle_numbers')
         .delete()
@@ -47,11 +71,9 @@ export default function AdminRafflesPage() {
       
       if (numbersError) {
         console.error('Error deleting raffle numbers:', numbersError)
-        alert('Erro ao deletar números da rifa. Por favor, tente novamente.')
-        return
       }
 
-      // Depois deletar a rifa
+      // Por último, deletar a rifa
       const { error: raffleError } = await supabase
         .from('raffles')
         .delete()
@@ -59,16 +81,29 @@ export default function AdminRafflesPage() {
       
       if (raffleError) {
         console.error('Error deleting raffle:', raffleError)
-        alert('Erro ao deletar rifa. Por favor, tente novamente.')
+        alert(`Erro ao deletar rifa: ${raffleError.message}`)
+        setDeletingId(null)
         return
       }
 
-      // Recarregar a lista
+      // Atualizar a lista localmente removendo a rifa deletada
+      setRaffles(prevRaffles => prevRaffles.filter(r => r.id !== raffleId))
+      
+      // Mostrar sucesso
       alert('Rifa excluída com sucesso!')
-      loadRaffles()
-    } catch (error) {
+      
+      // Limpar o estado de loading
+      setDeletingId(null)
+      
+      // Recarregar a lista do banco para garantir sincronização
+      setTimeout(() => {
+        loadRaffles()
+      }, 500)
+      
+    } catch (error: any) {
       console.error('Error deleting raffle:', error)
-      alert('Erro ao deletar rifa. Por favor, tente novamente.')
+      alert(`Erro ao deletar rifa: ${error.message || 'Erro desconhecido'}`)
+      setDeletingId(null)
     }
   }
 
@@ -255,10 +290,11 @@ export default function AdminRafflesPage() {
                           </Link>
                           <button
                             onClick={() => deleteRaffle(raffle.id, raffle.title)}
-                            className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                            title="Excluir"
+                            disabled={deletingId === raffle.id}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={deletingId === raffle.id ? "Excluindo..." : "Excluir"}
                           >
-                            🗑️
+                            {deletingId === raffle.id ? '⏳' : '🗑️'}
                           </button>
                         </div>
                       </td>
