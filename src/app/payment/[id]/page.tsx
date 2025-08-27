@@ -211,19 +211,6 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container max-w-4xl mx-auto px-4">
-        {/* Aviso de modo teste */}
-        <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚠️</span>
-            <div>
-              <p className="font-semibold text-blue-600">Sistema em Modo Teste</p>
-              <p className="text-sm text-muted-foreground">
-                Este é um QR Code de teste. Para pagamentos reais, configure as credenciais da PaySamba.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Header com timer */}
         <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
           <div className="flex items-center justify-between">

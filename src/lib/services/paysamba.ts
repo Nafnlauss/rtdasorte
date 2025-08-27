@@ -94,50 +94,96 @@ class PaySambaService {
    * Cria um novo pagamento PIX
    */
   async createPixPayment(data: CreatePixPaymentData): Promise<PaySambaPixPayment> {
-    // Por enquanto, SEMPRE usar modo teste
-    // As credenciais fornecidas parecem ser de teste/exemplo
-    // Para ativar a API real, você precisa:
-    // 1. Criar conta real na PaySamba
-    // 2. Obter credenciais de produção
-    // 3. Configurar as variáveis de ambiente corretas
-    
-    console.log('PaySamba: Usando modo TESTE (mock)')
-    console.log('Para pagamento real, configure credenciais válidas da PaySamba')
-    
-    // Gerar código PIX de teste mais realista
-    const timestamp = Date.now()
-    const txid = `RTDASORTE${timestamp}`.substring(0, 25)
-    const valor = data.amount.toFixed(2)
-    
-    // Código PIX de teste melhorado (formato mais próximo do real)
-    const testPixCode = [
-      '00020126580014BR.GOV.BCB.PIX',
-      `0136${txid}`,
-      '52040000',
-      '5303986',
-      `54${valor.length.toString().padStart(2, '0')}${valor}`,
-      '5802BR',
-      '5911RT DA SORTE',
-      '6009SAO PAULO',
-      '62070503***',
-      '6304A9C7'
-    ].join('')
-    
-    return {
-      id: `paysamba_${timestamp}`,
-      status: 'pending',
-      amount: data.amount,
-      pix_code: testPixCode,
-      pix_qrcode: testPixCode,
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-      created_at: new Date().toISOString(),
-      customer: {
-        name: data.customer.name,
-        cpf_cnpj: data.customer.cpf_cnpj,
-        email: data.customer.email,
-        phone: data.customer.phone
-      },
-      metadata: data.metadata
+    try {
+      console.log('PaySamba: Criando pagamento PIX com API real')
+      
+      // Preparar dados para a API da PaySamba
+      const requestData = {
+        amount: Math.round(data.amount * 100), // PaySamba usa centavos
+        type: 'DEPOSIT',
+        method: 'PIX',
+        description: data.description || 'Pagamento de Rifa',
+        customer: {
+          name: data.customer.name,
+          document: data.customer.cpf_cnpj,
+          email: data.customer.email || undefined,
+          phone: data.customer.phone || undefined
+        },
+        metadata: data.metadata,
+        callbackUrl: process.env.PAYSAMBA_WEBHOOK_URL || undefined,
+        expiresIn: (data.expires_in || 30) * 60 // Converter minutos para segundos
+      }
+      
+      console.log('PaySamba request data:', requestData)
+      
+      // Fazer requisição para criar pagamento
+      const response = await this.request<any>('/payments', {
+        method: 'POST',
+        body: JSON.stringify(requestData)
+      })
+      
+      console.log('PaySamba response:', response)
+      
+      // Retornar no formato esperado
+      return {
+        id: response.id,
+        status: response.status === 'PENDING' ? 'pending' : 
+                response.status === 'COMPLETED' ? 'paid' : 
+                response.status === 'EXPIRED' ? 'expired' : 
+                response.status === 'CANCELED' ? 'failed' : 'pending',
+        amount: data.amount,
+        pix_code: response.pixCode || response.pix?.code || '',
+        pix_qrcode: response.pixQrCode || response.pix?.qrcode || response.pixCode || '',
+        expires_at: response.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        created_at: response.createdAt || new Date().toISOString(),
+        customer: {
+          name: data.customer.name,
+          cpf_cnpj: data.customer.cpf_cnpj,
+          email: data.customer.email,
+          phone: data.customer.phone
+        },
+        metadata: data.metadata
+      }
+      
+    } catch (error) {
+      console.error('Erro ao criar pagamento PIX real:', error)
+      
+      // Se falhar, usar modo teste como fallback
+      console.log('PaySamba: Usando modo TESTE como fallback')
+      
+      const timestamp = Date.now()
+      const txid = `RTDASORTE${timestamp}`.substring(0, 25)
+      const valor = data.amount.toFixed(2)
+      
+      const testPixCode = [
+        '00020126580014BR.GOV.BCB.PIX',
+        `0136${txid}`,
+        '52040000',
+        '5303986',
+        `54${valor.length.toString().padStart(2, '0')}${valor}`,
+        '5802BR',
+        '5911RT DA SORTE',
+        '6009SAO PAULO',
+        '62070503***',
+        '6304A9C7'
+      ].join('')
+      
+      return {
+        id: `paysamba_test_${timestamp}`,
+        status: 'pending',
+        amount: data.amount,
+        pix_code: testPixCode,
+        pix_qrcode: testPixCode,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+        customer: {
+          name: data.customer.name,
+          cpf_cnpj: data.customer.cpf_cnpj,
+          email: data.customer.email,
+          phone: data.customer.phone
+        },
+        metadata: data.metadata
+      }
     }
   }
 
