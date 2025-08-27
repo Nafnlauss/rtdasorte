@@ -33,6 +33,45 @@ export default function AdminRafflesPage() {
     }
   }
 
+  const deleteRaffle = async (raffleId: string, raffleTitle: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a rifa "${raffleTitle}"?\n\nEsta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      // Primeiro deletar os números da rifa
+      const { error: numbersError } = await supabase
+        .from('raffle_numbers')
+        .delete()
+        .eq('raffle_id', raffleId)
+      
+      if (numbersError) {
+        console.error('Error deleting raffle numbers:', numbersError)
+        alert('Erro ao deletar números da rifa. Por favor, tente novamente.')
+        return
+      }
+
+      // Depois deletar a rifa
+      const { error: raffleError } = await supabase
+        .from('raffles')
+        .delete()
+        .eq('id', raffleId)
+      
+      if (raffleError) {
+        console.error('Error deleting raffle:', raffleError)
+        alert('Erro ao deletar rifa. Por favor, tente novamente.')
+        return
+      }
+
+      // Recarregar a lista
+      alert('Rifa excluída com sucesso!')
+      loadRaffles()
+    } catch (error) {
+      console.error('Error deleting raffle:', error)
+      alert('Erro ao deletar rifa. Por favor, tente novamente.')
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -215,6 +254,7 @@ export default function AdminRafflesPage() {
                             ✏️
                           </Link>
                           <button
+                            onClick={() => deleteRaffle(raffle.id, raffle.title)}
                             className="p-2 hover:bg-secondary rounded-lg transition-colors"
                             title="Excluir"
                           >

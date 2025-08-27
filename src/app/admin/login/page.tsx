@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { validateAdminCredentials } from '@/lib/auth/admin'
 import { createClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const supabase = createClient()
   const [traceId] = useState(() => `admin-login-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   
@@ -184,15 +186,29 @@ export default function AdminLoginPage() {
               <label htmlFor="password" className="block text-sm font-medium mb-2">
                 Senha
               </label>
-              <input
-                type="password"
-                id="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg bg-secondary border border-border focus:border-primary focus:outline-none transition-colors"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-4 py-2 pr-12 rounded-lg bg-secondary border border-border focus:border-primary focus:outline-none transition-colors"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
