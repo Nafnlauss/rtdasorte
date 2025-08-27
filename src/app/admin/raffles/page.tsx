@@ -43,49 +43,17 @@ export default function AdminRafflesPage() {
       // Mostrar loading para esta rifa específica
       setDeletingId(raffleId)
       
-      // Primeiro deletar as transações relacionadas
-      const { error: transactionsError } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('raffle_id', raffleId)
+      // Usar API route para deletar com permissões admin
+      const response = await fetch(`/api/admin/raffles/${raffleId}`, {
+        method: 'DELETE',
+      })
       
-      if (transactionsError) {
-        console.error('Error deleting transactions:', transactionsError)
-      }
-
-      // Deletar os ganhadores
-      const { error: winnersError } = await supabase
-        .from('winners')
-        .delete()
-        .eq('raffle_id', raffleId)
+      const data = await response.json()
       
-      if (winnersError) {
-        console.error('Error deleting winners:', winnersError)
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao deletar rifa')
       }
-
-      // Deletar os números da rifa
-      const { error: numbersError } = await supabase
-        .from('raffle_numbers')
-        .delete()
-        .eq('raffle_id', raffleId)
       
-      if (numbersError) {
-        console.error('Error deleting raffle numbers:', numbersError)
-      }
-
-      // Por último, deletar a rifa
-      const { error: raffleError } = await supabase
-        .from('raffles')
-        .delete()
-        .eq('id', raffleId)
-      
-      if (raffleError) {
-        console.error('Error deleting raffle:', raffleError)
-        alert(`Erro ao deletar rifa: ${raffleError.message}`)
-        setDeletingId(null)
-        return
-      }
-
       // Atualizar a lista localmente removendo a rifa deletada
       setRaffles(prevRaffles => prevRaffles.filter(r => r.id !== raffleId))
       
@@ -94,11 +62,6 @@ export default function AdminRafflesPage() {
       
       // Limpar o estado de loading
       setDeletingId(null)
-      
-      // Recarregar a lista do banco para garantir sincronização
-      setTimeout(() => {
-        loadRaffles()
-      }, 500)
       
     } catch (error: any) {
       console.error('Error deleting raffle:', error)
