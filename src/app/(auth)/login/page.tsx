@@ -95,7 +95,7 @@ export default function LoginPage() {
                 required
                 value={loginField}
                 onChange={(e) => setLoginField(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
                 placeholder="seu@email.com ou (11) 99999-9999"
               />
             </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
                 placeholder="••••••••"
               />
             </div>

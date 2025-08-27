@@ -116,7 +116,7 @@ export default function RegisterPage() {
               required
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
             />
           </div>
 
@@ -131,7 +131,7 @@ export default function RegisterPage() {
               required
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
               placeholder="(11) 99999-9999"
             />
           </div>
@@ -147,7 +147,7 @@ export default function RegisterPage() {
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
               placeholder="seu@email.com"
             />
           </div>
@@ -163,7 +163,7 @@ export default function RegisterPage() {
               required
               value={formData.cpf}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
               placeholder="000.000.000-00"
             />
           </div>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
               minLength={6}
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
             />
           </div>
 
@@ -196,7 +196,7 @@ export default function RegisterPage() {
               minLength={6}
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-black placeholder:text-gray-500"
             />
           </div>
 
